@@ -11,3 +11,5 @@ interface QuestionAPI {
     @GET("movies.json")
     suspend fun getQuestions(): Questions
 }
+
+// RETROFIT

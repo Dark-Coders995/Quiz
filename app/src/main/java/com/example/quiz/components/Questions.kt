@@ -1,9 +1,11 @@
 package com.example.quiz.components
 
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -20,9 +22,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,23 +39,25 @@ import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.quiz.model.QuestionsItem
+import com.example.quiz.model.Question
 import com.example.quiz.screen.viewmodel.QuestionViewModel
 import com.example.quiz.util.AppColors
 
 
 @Composable
 fun Question(viewModel: QuestionViewModel) {
-    val questions = viewModel.data.value.data?.toMutableList()
+    val questions = viewModel.ktorData.value.data?.toMutableList()
     val questionIndex = remember {
         mutableIntStateOf(0)
     }
     //Log.d("Size", "Questions: ${questions?.size} ")
-    if (viewModel.data.value.loading == true)
+    if (viewModel.ktorData.value.loading == true)
         CircularProgressIndicator()
     else {
         val question = try {
@@ -66,7 +73,10 @@ fun Question(viewModel: QuestionViewModel) {
             ) {
                 questionIndex.intValue = questionIndex.intValue + 1
             }
+        } else {
+            Log.e("Error", "APi must not work")
         }
+
 
     }
 }
@@ -75,7 +85,7 @@ fun Question(viewModel: QuestionViewModel) {
 //@Preview
 @Composable
 fun QuestionDisplay(
-    question: QuestionsItem,
+    question: Question,
     questionIndex: MutableState<Int>,
     viewModel: QuestionViewModel,
     onNextClicked: (Int) -> Unit = {},
@@ -106,8 +116,15 @@ fun QuestionDisplay(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.Start
         ) {
+            if (questionIndex.value >= 3) {
+                ShowProgress(
+                    score = questionIndex.value
+                )
+            }
             QuestionTracker(
-                counter = questionIndex.value
+                counter = questionIndex.value,
+                outOf = viewModel.getKtorTotalQuestionCount()
+
             )
             DrawDottedLine(pathEffect = pathEffect)
             Column {
@@ -272,10 +289,79 @@ fun DrawDottedLine(
         drawLine(
             color = AppColors.mLightGray,
             start = Offset(0f, 0f),
-            end = Offset(size.width, 0f),
+            end = Offset(size.width, 1f),
             pathEffect = pathEffect
         )
     }
 }
 
+@Preview
 @Composable
+fun ShowProgress(
+    score: Int = 12
+) {
+    val gradient = Brush.linearGradient(
+        listOf(
+            Color(0xFFF95075),
+            Color(0xFFBE6BE5)
+        )
+    )
+    var progressFactor by remember(score) {
+        mutableFloatStateOf(score * 0.002f)
+    }
+    Row(
+        modifier = Modifier
+            .padding(3.dp)
+            .fillMaxWidth()
+            .height(45.dp)
+            .border(
+                width = 4.dp,
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        AppColors.mOffDarkPurple,
+                        AppColors.mOffDarkPurple
+                    )
+                ),
+                shape = RoundedCornerShape(34.dp)
+            )
+            .clip(
+                RoundedCornerShape(
+                    topStartPercent = 50,
+                    topEndPercent = 50,
+                    bottomEndPercent = 50,
+                    bottomStartPercent = 50
+                )
+            )
+            .background(Color.Transparent),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(progressFactor)
+                .fillMaxHeight()
+                .background(
+                    brush = gradient
+                )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .padding(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = (score * 10).toString(),
+                    modifier = Modifier
+                        .clip(
+                            shape = RoundedCornerShape(23.dp)
+                        )
+                        .fillMaxHeight(0.87f)
+                        .fillMaxWidth()
+                        .padding(6.dp),
+                    color = AppColors.mOffWhite,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
+}

@@ -1,10 +1,15 @@
 package com.example.quiz.model
 
-data class QuestionsItem(
+
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class Question(
     val answer: String,
     val category: String,
     val choices: List<String>,
     val question: String
 )
 
-// RETROFIT
+
+// FOR KTOR
